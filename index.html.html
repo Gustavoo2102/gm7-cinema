@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinema GM7 — Sistema de Convites</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#07070d;--surface:#0f0f18;--surface-alt:#161622;--border:#222236;--accent:#d4a24e;--accent-dark:#b8862e;--accent-glow:rgba(212,162,78,.12);--text:#e4e4ee;--text-muted:#7e7e9a;--text-dim:#4e4e68;--danger:#e05555;--success:#3fbb6e;--campinas:#5e8ff7;--galleria:#b96eff;--mono:'JetBrains Mono','Fira Code',monospace;--font:'Outfit',sans-serif}
+html{height:100%}body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+button{cursor:pointer;font-family:var(--font);border:none}code{font-family:var(--mono)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-18px) scale(.95)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important}.fade-in{animation:fadeIn .35s ease both}.slide-up{animation:slideUp .5s ease both}
+.input-field{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-size:14px;font-family:var(--font);width:100%;transition:all .2s;outline:none}
+.input-field:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+textarea.input-field{resize:vertical;font-family:var(--mono);font-size:12px}
+.label{display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px;border-radius:8px;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:var(--bg);padding:10px 20px}.btn-primary:hover{background:var(--accent-dark);transform:translateY(-1px)}.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border);padding:8px 16px}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid rgba(224,85,85,.25);padding:6px 10px}.btn-danger:hover{background:rgba(224,85,85,.08);border-color:var(--danger)}
+.btn-sm{padding:6px 10px;font-size:11px}.btn-full{width:100%;justify-content:center;padding:12px 0;font-size:14px;border-radius:10px}
+.tag{padding:2px 9px;border-radius:16px;font-size:11px;font-weight:500;display:inline-block}
+.tag-available{background:rgba(63,187,110,.12);color:var(--success)}.tag-claimed{background:rgba(224,85,85,.12);color:var(--danger)}
+.tag-campinas{background:rgba(94,143,247,.1);color:var(--campinas)}.tag-galleria{background:rgba(185,110,255,.1);color:var(--galleria)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:hidden}
+.lift{transition:transform .18s,box-shadow .18s}.lift:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.3)}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{text-align:left;padding:9px 14px;font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)}
+.data-table td{padding:11px 14px;font-size:13px;border-bottom:1px solid rgba(34,34,54,.25)}.data-table th:last-child,.data-table td:last-child{text-align:right}
+#toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:9999;padding:11px 22px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:0 6px 28px rgba(0,0,0,.4);display:flex;align-items:center;gap:7px;animation:toastIn .25s ease;color:#fff;pointer-events:none}
+#toast.success{background:var(--success)}#toast.error{background:var(--danger)}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:18px}
+.modal{background:var(--surface-alt);border-radius:16px;padding:26px;max-width:440px;width:100%;border:1px solid var(--border);box-shadow:0 16px 50px rgba(0,0,0,.45);animation:pop .2s ease}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:4px}.modal-sub{color:var(--text-muted);font-size:12px;margin-bottom:16px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--border);background:rgba(15,15,24,.92);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;color:var(--bg)}
+.header-title{font-size:15px;font-weight:700;letter-spacing:-.02em}.header-title span{color:var(--accent)}
+.header-sub{font-size:10px;color:var(--text-muted);font-weight:500}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;overflow:hidden}
+.login-orb-1{position:absolute;top:-15%;right:-8%;width:450px;height:450px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 65%);pointer-events:none}
+.login-orb-2{position:absolute;bottom:-18%;left:-6%;width:500px;height:500px;background:radial-gradient(circle,rgba(94,143,247,.05) 0%,transparent 65%);pointer-events:none}
+.login-filmstrip{position:absolute;top:0;left:30px;width:32px;opacity:.04}.login-filmstrip div{width:32px;height:40px;border:2px solid #fff;border-radius:3px;margin-bottom:8px}
+.login-box{max-width:400px;width:100%;position:relative;z-index:1}
+.login-logo{text-align:center;margin-bottom:36px}
+.login-logo-icon{display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:16px;margin-bottom:14px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));box-shadow:0 8px 30px var(--accent-glow);color:var(--bg)}
+.login-logo h1{font-size:26px;font-weight:800;letter-spacing:-.03em}.login-logo h1 span{color:var(--accent)}
+.login-logo p{color:var(--text-muted);font-size:13px;margin-top:4px}
+.login-tabs{display:flex;background:var(--surface);border-radius:11px;padding:3px;margin-bottom:24px;border:1px solid var(--border)}
+.login-tab{flex:1;padding:9px 0;border-radius:9px;font-size:13px;font-weight:600;background:transparent;color:var(--text-muted);transition:all .2s}.login-tab.active{background:var(--accent);color:var(--bg)}
+.login-form{background:var(--surface);border-radius:16px;padding:26px;border:1px solid var(--border);box-shadow:0 4px 40px rgba(0,0,0,.25)}
+.login-form .field{margin-bottom:14px}.login-form .field:last-of-type{margin-bottom:18px}
+.login-error{color:var(--danger);font-size:12px;margin-bottom:12px;font-weight:500}
+.login-footer{text-align:center;margin-top:14px;font-size:11px;color:var(--text-dim);display:flex;align-items:center;justify-content:center;gap:4px}
+.dashboard{min-height:100vh}.dashboard-body{max-width:920px;margin:0 auto;padding:22px 18px}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--surface);border-radius:13px;padding:16px 18px;border:1px solid var(--border)}
+.stat-label{font-size:11px;color:var(--text-muted);font-weight:500;margin-bottom:5px}.stat-label span{color:var(--text-dim)}
+.stat-value{font-size:26px;font-weight:800;letter-spacing:-.03em}.stat-value small{font-size:13px;color:var(--text-dim);font-weight:400}
+.nav-tabs{display:flex;gap:5px;margin-bottom:18px;flex-wrap:wrap}
+.nav-tab{display:flex;align-items:center;gap:5px;padding:8px 16px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-weight:600;font-size:12px;transition:all .2s}
+.nav-tab.active-campinas{border-color:var(--campinas);background:rgba(94,143,247,.07);color:var(--campinas)}
+.nav-tab.active-galleria{border-color:var(--galleria);background:rgba(185,110,255,.07);color:var(--galleria)}
+.nav-tab.active-history{border-color:var(--accent);background:var(--accent-glow);color:var(--accent)}
+.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:26px}
+.shop-card{padding:18px 16px;border-radius:14px;text-align:left;border:2px solid var(--border);background:var(--surface);transition:all .2s;cursor:pointer}
+.shop-card.sel-campinas{border-color:var(--campinas);background:rgba(94,143,247,.04)}
+.shop-card.sel-galleria{border-color:var(--galleria);background:rgba(185,110,255,.04)}
+.shop-card-header{display:flex;align-items:center;gap:7px;margin-bottom:8px;font-weight:700;font-size:13px}
+.shop-card-value{font-size:24px;font-weight:800;letter-spacing:-.03em}.shop-card-value small{font-size:12px;font-weight:400;color:var(--text-muted)}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.toolbar-count{font-size:12px;color:var(--text-muted)}
+.empty-state{padding:36px;text-align:center;color:var(--text-muted)}.empty-state p{margin-top:10px;font-size:13px}.empty-state small{color:var(--text-dim);font-size:11px}
+.code-row{background:var(--surface);border-radius:11px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px;transition:transform .18s,box-shadow .18s}
+.code-row:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.code-row-left{display:flex;align-items:center;gap:10px}
+.code-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.code-icon.campinas{background:rgba(94,143,247,.08);color:var(--campinas)}.code-icon.galleria{background:rgba(185,110,255,.08);color:var(--galleria)}
+.code-row-actions{display:flex;gap:5px;flex-wrap:wrap}
+.section-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.claim-item{padding:12px 16px;border-bottom:1px solid rgba(34,34,54,.2);display:flex;align-items:center;justify-content:space-between}
+.claim-left{display:flex;align-items:center;gap:9px}.claim-code{font-family:var(--mono);font-size:12px}.claim-date{font-size:10px;color:var(--text-dim);margin-top:1px}
+.spinner-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:10000;flex-direction:column;gap:16px}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.spinner-text{color:var(--text-muted);font-size:13px}
+.conn-status{position:fixed;bottom:12px;right:12px;padding:6px 12px;border-radius:8px;font-size:10px;font-weight:600;z-index:50;display:flex;align-items:center;gap:5px}
+.conn-ok{background:rgba(63,187,110,.1);color:var(--success);border:1px solid rgba(63,187,110,.2)}
+#setup-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.setup-box{max-width:480px;width:100%;background:var(--surface);border-radius:16px;padding:32px;border:1px solid var(--border)}
+.setup-box h2{font-size:20px;font-weight:800;margin-bottom:8px}.setup-box h2 span{color:var(--accent)}
+.setup-box>p{color:var(--text-muted);font-size:13px;margin-bottom:20px;line-height:1.6}.setup-box .field{margin-bottom:14px}
+.setup-step{color:var(--accent);font-weight:700;font-size:12px;margin-bottom:16px;text-transform:uppercase;letter-spacing:.06em}
+.loading-bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:9999;transition:width .3s;border-radius:0 2px 2px 0}
+@media(max-width:600px){.shop-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:1fr}.code-row{flex-direction:column;align-items:flex-start}.code-row-actions{width:100%}.code-row-actions .btn{flex:1;justify-content:center}.header{padding:12px 14px}.dashboard-body{padding:16px 12px}}
+</style>
+</head>
+<body>
+
+<div id="loading-bar" class="loading-bar hidden" style="width:0%"></div>
+<div id="loading-screen" class="spinner-overlay"><div class="spinner"></div><div class="spinner-text">Conectando ao servidor...</div></div>
+
+<div id="setup-screen" class="hidden">
+  <div class="setup-box slide-up">
+    <div class="setup-step">Configuração inicial</div>
+    <h2>Cinema <span>GM7</span></h2>
+    <p>Cole a <strong>URL do seu servidor no Render</strong>.<br>Exemplo: <code style="color:var(--accent);font-size:12px">https://cinema-gm7.onrender.com</code></p>
+    <div class="field"><label class="label">URL do Servidor</label><input class="input-field" id="setup-url" placeholder="https://cinema-gm7.onrender.com"></div>
+    <div id="setup-error" class="login-error hidden"></div>
+    <button class="btn btn-primary btn-full" id="setup-btn" onclick="saveSetup()" style="margin-top:8px">Conectar</button>
+    <p style="margin-top:16px;font-size:11px;color:var(--text-dim);text-align:center">URL fica salva neste navegador.</p>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<div id="login-screen" class="hidden">
+  <div class="login-orb-1"></div><div class="login-orb-2"></div><div class="login-filmstrip" id="filmstrip"></div>
+  <div class="login-box slide-up">
+    <div class="login-logo">
+      <div class="login-logo-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg></div>
+      <h1>Cinema <span>GM7</span></h1><p>Sistema de Convites de Ingresso</p>
+    </div>
+    <div class="login-tabs">
+      <button class="login-tab active" data-tab="employee" onclick="switchLoginTab('employee')">Funcionário</button>
+      <button class="login-tab" data-tab="admin" onclick="switchLoginTab('admin')">Administrador</button>
+    </div>
+    <div class="login-form">
+      <div id="login-employee-fields">
+        <div class="field"><label class="label">Seu nome</label><input class="input-field" id="login-name" placeholder="Ex: João Silva"></div>
+        <div class="field"><label class="label">Email</label><input class="input-field" id="login-email" type="email" placeholder="seu.email@gm7.com.br"></div>
+      </div>
+      <div id="login-admin-fields" class="hidden">
+        <div class="field"><label class="label">Usuário</label><input class="input-field" id="login-username" placeholder="admin"></div>
+        <div class="field"><label class="label">Senha</label><input class="input-field" id="login-password" type="password" placeholder="••••••••"></div>
+      </div>
+      <div id="login-error" class="login-error hidden"></div>
+      <button class="btn btn-primary btn-full" id="login-btn" onclick="handleLogin()">Entrar</button>
+    </div>
+    <div id="login-footer" class="login-footer hidden"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Acesso restrito</div>
+  </div>
+</div>
+
+<div id="admin-screen" class="dashboard hidden">
+  <div class="header">
+    <div class="header-brand"><div class="header-logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg></div><div><div class="header-title">Cinema <span>GM7</span></div><div class="header-sub">Painel Administrativo</div></div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost btn-sm" onclick="refreshData()" title="Atualizar">↻</button>
+      <button class="btn btn-ghost" onclick="doLogout()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</button>
+    </div>
+  </div>
+  <div class="dashboard-body"><div class="stats-row" id="admin-stats"></div><div class="nav-tabs" id="admin-tabs"></div><div id="admin-content"></div></div>
+</div>
+
+<div id="employee-screen" class="dashboard hidden">
+  <div class="header">
+    <div class="header-brand"><div class="header-logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg></div><div><div class="header-title">Cinema <span>GM7</span></div><div class="header-sub" id="emp-greeting"></div></div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost btn-sm" onclick="refreshData()" title="Atualizar">↻</button>
+      <button class="btn btn-ghost" onclick="doLogout()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</button>
+    </div>
+  </div>
+  <div class="dashboard-body"><div class="shop-grid" id="emp-shops"></div><div id="emp-content"></div></div>
+</div>
+
+<div id="modal-add" class="overlay hidden" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Adicionar Códigos</div><div class="modal-sub" id="modal-add-sub"></div>
+    <textarea class="input-field" id="modal-add-input" rows="7" placeholder="CODIGO-001&#10;CODIGO-002&#10;CODIGO-003"></textarea>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="hideModal()">Cancelar</button><button class="btn btn-primary" id="btn-add-codes" onclick="addBulkCodes()">＋ Adicionar</button></div>
+  </div>
+</div>
+
+<div id="modal-email" class="overlay hidden" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Enviar por Email</div>
+    <p style="color:var(--text-muted);font-size:12px;margin-bottom:3px">Código: <code id="modal-email-code" style="color:var(--accent)"></code></p>
+    <p style="color:var(--text-dim);font-size:11px;margin-bottom:16px">Abrirá seu cliente de email com o convite.</p>
+    <div class="field"><label class="label">Email do destinatário</label><input class="input-field" id="modal-email-to" type="email" placeholder="colega@gm7.com.br"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="hideModal()">Cancelar</button><button class="btn btn-primary" onclick="sendEmail()">✉ Enviar</button></div>
+  </div>
+</div>
+
+<div id="conn-status" class="conn-status hidden"></div>
+
+<script>
+const SVG={shop:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 2-4h16l2 4"/><path d="M2 7v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7"/><path d="M9 21V11h6v10"/></svg>',users:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',ticket:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/></svg>',check:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',copy:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',trash:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',plus:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',dot:'<svg width="8" height="8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>'};
+
+let API='';
+let S={loginTab:'employee',user:null,codes:{campinas:[],galleria:[]},claims:[],adminTab:'campinas',empShop:'campinas',emailCode:null};
+
+function showLoading(on){const b=document.getElementById('loading-bar');if(on){b.classList.remove('hidden');b.style.width='70%'}else{b.style.width='100%';setTimeout(()=>{b.classList.add('hidden');b.style.width='0%'},300)}}
+
+async function get(path){showLoading(true);try{const r=await fetch(API+path);const d=await r.json();showLoading(false);return d}catch(e){showLoading(false);return{success:false,error:e.message}}}
+async function post(path,body){showLoading(true);try{const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();showLoading(false);return d}catch(e){showLoading(false);return{success:false,error:e.message}}}
+async function del(path){showLoading(true);try{const r=await fetch(API+path,{method:'DELETE'});const d=await r.json();showLoading(false);return d}catch(e){showLoading(false);return{success:false,error:e.message}}}
+
+(function(){
+  const fs=document.getElementById('filmstrip');for(let i=0;i<20;i++){const d=document.createElement('div');fs.appendChild(d)}
+  document.querySelectorAll('#login-screen input').forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter')handleLogin()}));
+  document.getElementById('modal-email-to').addEventListener('keydown',e=>{if(e.key==='Enter')sendEmail()});
+  document.getElementById('setup-url').addEventListener('keydown',e=>{if(e.key==='Enter')saveSetup()});
+  const saved=localStorage.getItem('gm7_api_url');
+  if(!saved){showScreen('setup-screen');return}
+  API=saved;testAndGo();
+})();
+
+async function testAndGo(){
+  const r=await get('/ping');
+  if(r.success){
+    document.getElementById('conn-status').className='conn-status conn-ok';
+    document.getElementById('conn-status').innerHTML=SVG.dot+' Servidor conectado';
+    document.getElementById('conn-status').classList.remove('hidden');
+    showScreen('login-screen');
+  }else{
+    showScreen('setup-screen');
+    document.getElementById('setup-url').value=localStorage.getItem('gm7_api_url')||'';
+    document.getElementById('setup-error').textContent='Servidor não respondeu. Verifique a URL.';
+    document.getElementById('setup-error').classList.remove('hidden');
+  }
+}
+
+async function saveSetup(){
+  const url=document.getElementById('setup-url').value.trim().replace(/\/$/,'');
+  const err=document.getElementById('setup-error');err.classList.add('hidden');
+  if(!url){err.textContent='Cole a URL do servidor.';err.classList.remove('hidden');return}
+  const btn=document.getElementById('setup-btn');btn.disabled=true;btn.textContent='Testando...';
+  API=url;const r=await get('/ping');
+  btn.disabled=false;btn.textContent='Conectar';
+  if(!r.success){err.textContent='Servidor não respondeu. Verifique se o deploy no Render está ativo.';err.classList.remove('hidden');return}
+  localStorage.setItem('gm7_api_url',url);
+  document.getElementById('conn-status').className='conn-status conn-ok';
+  document.getElementById('conn-status').innerHTML=SVG.dot+' Servidor conectado';
+  document.getElementById('conn-status').classList.remove('hidden');
+  showScreen('login-screen');toast('Conectado!');
+}
+
+function showScreen(id){['loading-screen','setup-screen','login-screen','admin-screen','employee-screen'].forEach(s=>document.getElementById(s).classList.add('hidden'));const e=document.getElementById(id);e.classList.remove('hidden');e.classList.add('fade-in')}
+
+let toastT;function toast(m,ok=true){const e=document.getElementById('toast');e.className=ok?'success':'error';e.innerHTML=SVG.check+' '+m;e.classList.remove('hidden');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.add('hidden'),2800)}
+
+function switchLoginTab(t){S.loginTab=t;document.querySelectorAll('.login-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));document.getElementById('login-employee-fields').classList.toggle('hidden',t!=='employee');document.getElementById('login-admin-fields').classList.toggle('hidden',t!=='admin');document.getElementById('login-footer').classList.toggle('hidden',t!=='admin');document.getElementById('login-error').classList.add('hidden')}
+
+async function handleLogin(){
+  const err=document.getElementById('login-error'),btn=document.getElementById('login-btn');
+  err.classList.add('hidden');btn.disabled=true;btn.textContent='Entrando...';
+  try{
+    if(S.loginTab==='admin'){
+      const u=document.getElementById('login-username').value.trim(),p=document.getElementById('login-password').value;
+      const r=await post('/login',{username:u,password:p});
+      if(!r.success){err.textContent=r.error||'Credenciais inválidas';err.classList.remove('hidden');return}
+      S.user={type:'admin',name:'Administrador'};showScreen('admin-screen');await loadAll();renderAdmin();
+    }else{
+      const email=document.getElementById('login-email').value.trim(),name=document.getElementById('login-name').value.trim();
+      if(!email){err.textContent='Informe seu email';err.classList.remove('hidden');return}
+      S.user={type:'employee',email,name:name||email.split('@')[0]};showScreen('employee-screen');await loadAll();renderEmployee();
+    }
+  }catch(e){err.textContent='Erro de conexão.';err.classList.remove('hidden')}
+  finally{btn.disabled=false;btn.textContent='Entrar'}
+}
+
+function doLogout(){S.user=null;showScreen('login-screen');['login-name','login-email','login-username','login-password'].forEach(id=>document.getElementById(id).value='')}
+
+async function loadAll(){
+  const cr=await get('/codes');
+  S.codes={campinas:[],galleria:[]};
+  if(cr.success&&cr.codes){cr.codes.forEach(c=>{const e={id:c._id,code:c.code,claimed:c.claimed,claimed_by:c.claimed_by,claimed_by_name:c.claimed_by_name,claimed_at:c.claimed_at};if(S.codes[c.shopping])S.codes[c.shopping].push(e)})}
+  const clr=await get('/claims');
+  S.claims=clr.success&&clr.claims?clr.claims.map(c=>({id:c._id,code:c.code,shopping:c.shopping,claimed_by:c.claimed_by,claimed_by_name:c.claimed_by_name,claimed_at:c.claimed_at})):[];
+}
+
+async function refreshData(){toast('Atualizando...');await loadAll();if(S.user?.type==='admin')renderAdmin();else renderEmployee();toast('Dados atualizados!')}
+
+function closeModal(e){if(e.target.classList.contains('overlay'))hideModal()}
+function hideModal(){document.getElementById('modal-add').classList.add('hidden');document.getElementById('modal-email').classList.add('hidden')}
+function showAddModal(){document.getElementById('modal-add-sub').textContent=(S.adminTab==='campinas'?'Shopping Campinas':'Shopping Galleria')+' — cole um código por linha';document.getElementById('modal-add-input').value='';document.getElementById('modal-add').classList.remove('hidden')}
+function showEmailModal(id,code){S.emailCode={id,code};document.getElementById('modal-email-code').textContent=code;document.getElementById('modal-email-to').value='';document.getElementById('modal-email').classList.remove('hidden');document.getElementById('modal-email-to').focus()}
+
+async function addBulkCodes(){
+  const raw=document.getElementById('modal-add-input').value;if(!raw.trim())return;
+  const key=S.adminTab==='history'?'campinas':S.adminTab;
+  const list=raw.split('\n').map(s=>s.trim()).filter(Boolean);
+  const btn=document.getElementById('btn-add-codes');btn.disabled=true;btn.textContent='Salvando...';
+  const r=await post('/codes',{codes:list,shopping:key});
+  btn.disabled=false;btn.textContent='＋ Adicionar';
+  if(!r.success){toast('Erro: '+(r.error||'falha'),false);return}
+  if(r.added===0){toast('Todos os códigos já existem',false);return}
+  await loadAll();toast(r.added+' código(s) adicionado(s)');hideModal();renderAdmin();
+}
+
+async function removeCode(id){const r=await del('/codes/'+id);if(!r.success){toast('Erro ao remover',false);return}await loadAll();toast('Código removido');renderAdmin()}
+
+async function claimCode(shopping,id,code){
+  const r=await post('/codes/'+id+'/claim',{email:S.user.email,name:S.user.name});
+  if(!r.success){toast(r.error||'Erro ao resgatar',false);return}
+  await loadAll();toast('Convite resgatado: '+code);renderEmployee();
+}
+
+function copyCode(code,btnId){navigator.clipboard.writeText(code).then(()=>{toast('Código copiado!');const b=document.getElementById(btnId);if(b){b.innerHTML=SVG.check+'<span>Copiado</span>';b.style.color='var(--success)';b.style.borderColor='var(--success)'}setTimeout(()=>{if(b){b.innerHTML=SVG.copy+'<span>Copiar</span>';b.style.color='';b.style.borderColor=''}},1800)})}
+
+function sendEmail(){
+  const to=document.getElementById('modal-email-to').value.trim();if(!to||!S.emailCode)return;
+  const sl=S.empShop==='campinas'?'Shopping Campinas':'Shopping Galleria';
+  window.open('mailto:'+to+'?subject='+encodeURIComponent('Seu Convite de Cinema GM7')+'&body='+encodeURIComponent('Olá!\n\nAqui está seu convite de cinema:\n\nCódigo: '+S.emailCode.code+'\nShopping: '+sl+'\n\nAproveite o filme!\n\nAtt,\n'+S.user.name+'\nGM7'),'_blank');
+  hideModal();toast('Email preparado!');
+}
+
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+function renderAdmin(){
+  const ca=S.codes.campinas.filter(c=>!c.claimed).length,ct=S.codes.campinas.length;
+  const ga=S.codes.galleria.filter(c=>!c.claimed).length,gt=S.codes.galleria.length;
+  document.getElementById('admin-stats').innerHTML=`<div class="stat-card"><div class="stat-label">Campinas <span>· disponíveis</span></div><div class="stat-value" style="color:var(--campinas)">${ca}<small> / ${ct}</small></div></div><div class="stat-card"><div class="stat-label">Galleria <span>· disponíveis</span></div><div class="stat-value" style="color:var(--galleria)">${ga}<small> / ${gt}</small></div></div><div class="stat-card"><div class="stat-label">Resgatados <span>· total</span></div><div class="stat-value" style="color:var(--accent)">${S.claims.length}</div></div>`;
+  const tabs=[{id:'campinas',label:'Shopping Campinas',icon:SVG.shop,cls:'active-campinas'},{id:'galleria',label:'Shopping Galleria',icon:SVG.shop,cls:'active-galleria'},{id:'history',label:'Histórico',icon:SVG.users,cls:'active-history'}];
+  document.getElementById('admin-tabs').innerHTML=tabs.map(t=>`<button class="nav-tab ${S.adminTab===t.id?t.cls:''}" onclick="S.adminTab='${t.id}';renderAdmin()">${t.icon} ${t.label}</button>`).join('');
+  const content=document.getElementById('admin-content');
+  if(S.adminTab!=='history'){
+    const codes=S.codes[S.adminTab]||[];let rows='';
+    if(!codes.length){rows=`<div class="empty-state">${SVG.ticket}<p>Nenhum código cadastrado</p><small>Clique em "Adicionar Códigos"</small></div>`}
+    else{const tb=codes.map(c=>`<tr><td><code>${esc(c.code)}</code></td><td>${c.claimed?'<span class="tag tag-claimed">Resgatado</span>':'<span class="tag tag-available">Disponível</span>'}</td><td style="color:var(--text-muted);font-size:12px">${esc(c.claimed_by||'—')}</td><td><button class="btn btn-danger" onclick="removeCode('${c.id}')" style="padding:4px 8px">${SVG.trash}</button></td></tr>`).join('');rows=`<div style="max-height:420px;overflow-y:auto"><table class="data-table"><thead><tr><th>Código</th><th>Status</th><th>Resgatado por</th><th>Ações</th></tr></thead><tbody>${tb}</tbody></table></div>`}
+    content.innerHTML=`<div class="fade-in"><div class="toolbar"><span class="toolbar-count">${codes.length} código(s)</span><button class="btn btn-primary" onclick="showAddModal()">${SVG.plus} Adicionar Códigos</button></div><div class="card">${rows}</div></div>`;
+  }else{
+    if(!S.claims.length){content.innerHTML='<div class="card fade-in"><div class="empty-state"><p>Nenhum resgate registrado</p></div></div>'}
+    else{const tb=[...S.claims].reverse().map(c=>`<tr><td><code style="font-size:12px">${esc(c.code)}</code></td><td><span class="tag ${c.shopping==='campinas'?'tag-campinas':'tag-galleria'}">${c.shopping==='campinas'?'Shopping Campinas':'Shopping Galleria'}</span></td><td><div style="font-size:13px">${esc(c.claimed_by_name)}</div><div style="color:var(--text-dim);font-size:10px">${esc(c.claimed_by)}</div></td><td style="text-align:left;font-size:11px;color:var(--text-muted)">${c.claimed_at?new Date(c.claimed_at).toLocaleString('pt-BR'):''}</td></tr>`).join('');content.innerHTML=`<div class="card fade-in"><div style="max-height:480px;overflow-y:auto"><table class="data-table"><thead><tr><th>Código</th><th>Shopping</th><th>Funcionário</th><th>Data</th></tr></thead><tbody>${tb}</tbody></table></div></div>`}
+  }
+}
+
+function renderEmployee(){
+  document.getElementById('emp-greeting').textContent='Olá, '+S.user.name;
+  const ca=S.codes.campinas.filter(c=>!c.claimed).length,ga=S.codes.galleria.filter(c=>!c.claimed).length;
+  document.getElementById('emp-shops').innerHTML=[{id:'campinas',label:'Shopping Campinas',color:'var(--campinas)',n:ca},{id:'galleria',label:'Shopping Galleria',color:'var(--galleria)',n:ga}].map(s=>`<div class="shop-card lift ${S.empShop===s.id?'sel-'+s.id:''}" onclick="S.empShop='${s.id}';renderEmployee()"><div class="shop-card-header" style="color:${S.empShop===s.id?s.color:'var(--text)'}">${SVG.shop} ${s.label}</div><div class="shop-card-value" style="color:${s.color}">${s.n}<small> disponíveis</small></div></div>`).join('');
+  const avail=(S.codes[S.empShop]||[]).filter(c=>!c.claimed);let ch='';
+  if(!avail.length){ch='<div class="card" style="padding:36px;text-align:center;color:var(--text-muted);font-size:13px">Sem convites disponíveis</div>'}
+  else{ch=avail.map(c=>`<div class="code-row"><div class="code-row-left"><div class="code-icon ${S.empShop}">${SVG.ticket}</div><code style="font-size:13px;font-weight:500">${esc(c.code)}</code></div><div class="code-row-actions"><button id="cp-${c.id}" class="btn btn-ghost btn-sm" onclick="copyCode('${esc(c.code)}','cp-${c.id}')">${SVG.copy}<span>Copiar</span></button><button class="btn btn-ghost btn-sm" onclick="showEmailModal('${c.id}','${esc(c.code)}')">${SVG.mail}<span>Email</span></button><button class="btn btn-primary btn-sm" style="padding:7px 14px" onclick="claimCode('${S.empShop}','${c.id}','${esc(c.code)}')">Resgatar</button></div></div>`).join('')}
+  const mine=S.claims.filter(c=>c.claimed_by===S.user.email);let mh='';
+  if(mine.length){const it=[...mine].reverse().map(c=>`<div class="claim-item"><div class="claim-left"><div style="color:var(--success)">${SVG.check}</div><div><div class="claim-code">${esc(c.code)}</div><div class="claim-date">${c.claimed_at?new Date(c.claimed_at).toLocaleString('pt-BR'):''}</div></div></div><span class="tag ${c.shopping==='campinas'?'tag-campinas':'tag-galleria'}" style="font-size:10px">${c.shopping==='campinas'?'Shopping Campinas':'Shopping Galleria'}</span></div>`).join('');mh=`<div style="margin-top:28px"><div class="section-title" style="color:var(--text-muted)">Meus Resgates</div><div class="card">${it}</div></div>`}
+  document.getElementById('emp-content').innerHTML=`<div class="fade-in"><div class="section-title">${SVG.ticket} Convites Disponíveis</div>${ch}${mh}</div>`;
+}
+</script>
+</body>
+</html>
