@@ -8,37 +8,7 @@
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-    async function generateZip(){
-      if(S.selected.size===0){toast('Selecione pelo menos um convite',false);return}
-      var overlay=document.getElementById('progress-overlay');
-      var pText=document.getElementById('progress-text');
-      var pSub=document.getElementById('progress-sub');
-      overlay.classList.remove('hidden');
-      pText.textContent='Gerando convites...';
-      var allCodes=S.codes.campinas.concat(S.codes.galleria).filter(function(c){return !c.claimed});
-      var selected=allCodes.filter(function(c){return S.selected.has(c.id)});
-      var imgWidth=425;var imgHeight=678;
-      var pdf=new jspdf.jsPDF({orientation:'portrait',unit:'px',format:[imgWidth,imgHeight]});
-      var done=0;
-      for(var i=0;i<selected.length;i++){
-        var code=selected[i];
-        pSub.textContent=(done+1)+' / '+selected.length;
-        var shopping=S.codes.campinas.find(function(c){return c.id===code.id})?'campinas':'galleria';
-        var dataUrl=await generateVoucherDataURL(code.code,shopping);
-        if(i>0)pdf.addPage([imgWidth,imgHeight]);
-        pdf.addImage(dataUrl,'PNG',0,0,imgWidth,imgHeight);
-        await post('/codes/'+code.id+'/claim',{email:S.user.email,name:S.user.name});
-        done++;
-      }
-      pText.textContent='Finalizando PDF...';
-      pSub.textContent='';
-      pdf.save('convites_cinema_gm7.pdf');
-      S.selected.clear();
-      await loadAll();
-      overlay.classList.add('hidden');
-      toast(done+' convite(s) gerado(s) em PDF!');
-      renderEmployee();
-    }
+    
 
 </script>
   <link
@@ -1333,35 +1303,39 @@
       updateGenerateBar();
     }
   
-    async function generateZip(){
-      if(S.selected.size===0){toast('Selecione pelo menos um convite',false);return}
-      var overlay=document.getElementById('progress-overlay');
-      var pText=document.getElementById('progress-text');
-      var pSub=document.getElementById('progress-sub');
+    
+
+
+    async function generateZip() {
+      if (S.selected.size === 0) { toast('Selecione pelo menos um convite', false); return; }
+      var overlay = document.getElementById('progress-overlay');
+      var pText = document.getElementById('progress-text');
+      var pSub = document.getElementById('progress-sub');
       overlay.classList.remove('hidden');
-      pText.textContent='Gerando convites...';
-      var allCodes=S.codes.campinas.concat(S.codes.galleria).filter(function(c){return !c.claimed});
-      var selected=allCodes.filter(function(c){return S.selected.has(c.id)});
-      var imgWidth=425;var imgHeight=678;
-      var pdf=new jspdf.jsPDF({orientation:'portrait',unit:'px',format:[imgWidth,imgHeight]});
-      var done=0;
-      for(var i=0;i<selected.length;i++){
-        var code=selected[i];
-        pSub.textContent=(done+1)+' / '+selected.length;
-        var shopping=S.codes.campinas.find(function(c){return c.id===code.id})?'campinas':'galleria';
-        var dataUrl=await generateVoucherDataURL(code.code,shopping);
-        if(i>0)pdf.addPage([imgWidth,imgHeight]);
-        pdf.addImage(dataUrl,'PNG',0,0,imgWidth,imgHeight);
-        await post('/codes/'+code.id+'/claim',{email:S.user.email,name:S.user.name});
+      pText.textContent = 'Gerando convites...';
+      var allCodes = S.codes.campinas.concat(S.codes.galleria).filter(function(c) { return !c.claimed; });
+      var selected = allCodes.filter(function(c) { return S.selected.has(c.id); });
+      var imgWidth = 425;
+      var imgHeight = 678;
+      var pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'px', format: [imgWidth, imgHeight] });
+      var done = 0;
+      for (var i = 0; i < selected.length; i++) {
+        var code = selected[i];
+        pSub.textContent = (done + 1) + ' / ' + selected.length;
+        var shopping = S.codes.campinas.find(function(c) { return c.id === code.id; }) ? 'campinas' : 'galleria';
+        var dataUrl = await generateVoucherDataURL(code.code, shopping);
+        if (i > 0) pdf.addPage([imgWidth, imgHeight]);
+        pdf.addImage(dataUrl, 'PNG', 0, 0, imgWidth, imgHeight);
+        await post('/codes/' + code.id + '/claim', { email: S.user.email, name: S.user.name });
         done++;
       }
-      pText.textContent='Finalizando PDF...';
-      pSub.textContent='';
+      pText.textContent = 'Finalizando PDF...';
+      pSub.textContent = '';
       pdf.save('convites_cinema_gm7.pdf');
       S.selected.clear();
       await loadAll();
       overlay.classList.add('hidden');
-      toast(done+' convite(s) gerado(s) em PDF!');
+      toast(done + ' convite(s) gerado(s) em PDF!');
       renderEmployee();
     }
 
