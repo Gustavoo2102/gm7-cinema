@@ -935,7 +935,7 @@
     }
 
     .generate-bar {
-      position: fixed;
+      position: sticky;
       bottom: 0;
       left: 0;
       right: 0;
@@ -1210,7 +1210,7 @@
 
     function toggleSelect(id) { if (S.selected.has(id)) S.selected.delete(id); else S.selected.add(id); renderEmployee() }
     function clearSelection() { S.selected.clear(); renderEmployee() }
-    function updateGenerateBar() { var n = S.selected.size; var bar = document.getElementById('generate-bar'); if (n > 0) { bar.classList.remove('hidden'); bar.style.position = 'fixed'; bar.style.bottom = '0'; bar.style.left = '0'; bar.style.right = '0'; bar.style.zIndex = '9990'; document.getElementById('sel-count').textContent = n + ' selecionado(s)' } else { bar.classList.add('hidden') } }
+    function updateGenerateBar() { var n = S.selected.size; var bar = document.getElementById('generate-bar'); if (n > 0) { bar.classList.remove('hidden'); bar.style.position = 'sticky'; bar.style.bottom = '0'; bar.style.left = '0'; bar.style.right = '0'; bar.style.zIndex = '9990'; document.getElementById('sel-count').textContent = n + ' selecionado(s)' } else { bar.classList.add('hidden') } }
 
     function generateVoucherImage(code, shopping) {
       return new Promise(function (resolve) {
