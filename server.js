@@ -1,22 +1,34 @@
-// ══════════════════════════════════════════════════════════════
-// CINEMA GM7 — Servidor API (Node.js + Express + MongoDB)
-// Hospede no Render.com como Web Service
-// ══════════════════════════════════════════════════════════════
-
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ─── MongoDB Connection ───
-const MONGO_URI = process.env.MONGO_URI || 'SUA_CONNECTION_STRING_AQUI';
+// ─── Serve o site HTML na pasta /public ───
+app.use(express.static(path.join(__dirname, 'public')));
 
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ MongoDB conectado!'))
-  .catch(err => console.error('❌ Erro MongoDB:', err));
+// ─── MongoDB ───
+const MONGO_URI = process.env.MONGO_URI || '';
+
+if (!MONGO_URI) {
+  console.error('❌ MONGO_URI não configurada! Adicione nas Environment Variables do Render.');
+} else {
+  console.log('🔄 Conectando ao MongoDB...');
+  mongoose.connect(MONGO_URI, {
+    serverSelectionTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+  })
+  .then(() => {
+    console.log('✅ MongoDB conectado!');
+    ensureAdmin();
+  })
+  .catch(err => {
+    console.error('❌ Erro MongoDB:', err.message);
+  });
+}
 
 // ─── Schemas ───
 const codeSchema = new mongoose.Schema({
@@ -46,121 +58,95 @@ const Code  = mongoose.model('Code', codeSchema);
 const Claim = mongoose.model('Claim', claimSchema);
 const Admin = mongoose.model('Admin', adminSchema);
 
-// ─── Criar admin padrão se não existir ───
 async function ensureAdmin() {
-  const exists = await Admin.findOne({ username: 'admin' });
-  if (!exists) {
-    await Admin.create({ username: 'admin', password: 'gm7@cinema2024' });
-    console.log('👤 Admin padrão criado (admin / gm7@cinema2024)');
+  try {
+    const exists = await Admin.findOne({ username: 'admin' });
+    if (!exists) {
+      await Admin.create({ username: 'admin', password: 'gm7@cinema2024' });
+      console.log('👤 Admin padrão criado (admin / gm7@cinema2024)');
+    }
+  } catch (err) {
+    console.error('Erro ao criar admin:', err.message);
   }
 }
-ensureAdmin();
+
+function checkDB(req, res, next) {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ success: false, error: 'Banco de dados não conectado.' });
+  }
+  next();
+}
 
 // ══════════════════════════════════════
-// ROTAS
+// ROTAS DA API
 // ══════════════════════════════════════
 
-// Health check
-app.get('/ping', (req, res) => {
-  res.json({ success: true, message: 'Cinema GM7 API rodando!' });
+app.get('/api/ping', (req, res) => {
+  const dbOk = mongoose.connection.readyState === 1;
+  res.json({ success: true, message: 'Cinema GM7 API rodando!', database: dbOk ? 'conectado' : 'desconectado' });
 });
 
-// ─── LOGIN ───
-app.post('/login', async (req, res) => {
+app.post('/api/login', checkDB, async (req, res) => {
   try {
     const { username, password } = req.body;
     const admin = await Admin.findOne({ username, password });
     if (!admin) return res.json({ success: false, error: 'Usuário ou senha incorretos' });
     res.json({ success: true });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
+  } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ─── GET ALL CODES ───
-app.get('/codes', async (req, res) => {
+app.get('/api/codes', checkDB, async (req, res) => {
   try {
     const codes = await Code.find().sort({ created_at: 1 });
     res.json({ success: true, codes });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
+  } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ─── ADD CODES (bulk) ───
-app.post('/codes', async (req, res) => {
+app.post('/api/codes', checkDB, async (req, res) => {
   try {
     const { codes, shopping } = req.body;
     if (!codes || !shopping) return res.json({ success: false, error: 'Dados incompletos' });
-
-    // Filter duplicates
     const existing = await Code.find({ shopping }).select('code');
     const existingSet = new Set(existing.map(c => c.code));
     const fresh = codes.filter(c => c.trim() && !existingSet.has(c.trim()));
-
     if (fresh.length === 0) return res.json({ success: true, added: 0 });
-
     const docs = fresh.map(code => ({ code: code.trim(), shopping }));
     await Code.insertMany(docs);
-
     res.json({ success: true, added: fresh.length });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
+  } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ─── REMOVE CODE ───
-app.delete('/codes/:id', async (req, res) => {
+app.delete('/api/codes/:id', checkDB, async (req, res) => {
   try {
     await Code.findByIdAndDelete(req.params.id);
     res.json({ success: true });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
+  } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ─── CLAIM CODE ───
-app.post('/codes/:id/claim', async (req, res) => {
+app.post('/api/codes/:id/claim', checkDB, async (req, res) => {
   try {
     const { email, name } = req.body;
     const code = await Code.findById(req.params.id);
-
     if (!code) return res.json({ success: false, error: 'Código não encontrado' });
     if (code.claimed) return res.json({ success: false, error: 'Convite já foi resgatado' });
-
-    // Update code
     code.claimed = true;
     code.claimed_by = email;
     code.claimed_by_name = name;
     code.claimed_at = new Date();
     await code.save();
-
-    // Save to history
-    await Claim.create({
-      code: code.code,
-      shopping: code.shopping,
-      claimed_by: email,
-      claimed_by_name: name
-    });
-
+    await Claim.create({ code: code.code, shopping: code.shopping, claimed_by: email, claimed_by_name: name });
     res.json({ success: true, code: code.code });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
+  } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ─── GET CLAIMS HISTORY ───
-app.get('/claims', async (req, res) => {
+app.get('/api/claims', checkDB, async (req, res) => {
   try {
     const claims = await Claim.find().sort({ claimed_at: 1 });
     res.json({ success: true, claims });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
+  } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ─── CHANGE ADMIN PASSWORD ───
-app.post('/admin/password', async (req, res) => {
+app.post('/api/admin/password', checkDB, async (req, res) => {
   try {
     const { username, oldPassword, newPassword } = req.body;
     const admin = await Admin.findOne({ username, password: oldPassword });
@@ -168,13 +154,16 @@ app.post('/admin/password', async (req, res) => {
     admin.password = newPassword;
     await admin.save();
     res.json({ success: true });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
+  } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+// Qualquer rota não-API serve o index.html (SPA)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ─── START ───
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🎬 Cinema GM7 API rodando na porta ${PORT}`);
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log('🎬 Cinema GM7 rodando na porta ' + PORT);
 });

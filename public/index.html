@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cinema GM7 — Sistema de Convites</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -72,8 +73,7 @@ textarea.input-field{resize:vertical;font-family:var(--mono);font-size:12px}
 .nav-tab.active-history{border-color:var(--accent);background:var(--accent-glow);color:var(--accent)}
 .shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:26px}
 .shop-card{padding:18px 16px;border-radius:14px;text-align:left;border:2px solid var(--border);background:var(--surface);transition:all .2s;cursor:pointer}
-.shop-card.sel-campinas{border-color:var(--campinas);background:rgba(94,143,247,.04)}
-.shop-card.sel-galleria{border-color:var(--galleria);background:rgba(185,110,255,.04)}
+.shop-card.sel-campinas{border-color:var(--campinas);background:rgba(94,143,247,.04)}.shop-card.sel-galleria{border-color:var(--galleria);background:rgba(185,110,255,.04)}
 .shop-card-header{display:flex;align-items:center;gap:7px;margin-bottom:8px;font-weight:700;font-size:13px}
 .shop-card-value{font-size:24px;font-weight:800;letter-spacing:-.03em}.shop-card-value small{font-size:12px;font-weight:400;color:var(--text-muted)}
 .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.toolbar-count{font-size:12px;color:var(--text-muted)}
@@ -90,13 +90,6 @@ textarea.input-field{resize:vertical;font-family:var(--mono);font-size:12px}
 .spinner-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:10000;flex-direction:column;gap:16px}
 .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 .spinner-text{color:var(--text-muted);font-size:13px}
-.conn-status{position:fixed;bottom:12px;right:12px;padding:6px 12px;border-radius:8px;font-size:10px;font-weight:600;z-index:50;display:flex;align-items:center;gap:5px}
-.conn-ok{background:rgba(63,187,110,.1);color:var(--success);border:1px solid rgba(63,187,110,.2)}
-#setup-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-.setup-box{max-width:480px;width:100%;background:var(--surface);border-radius:16px;padding:32px;border:1px solid var(--border)}
-.setup-box h2{font-size:20px;font-weight:800;margin-bottom:8px}.setup-box h2 span{color:var(--accent)}
-.setup-box>p{color:var(--text-muted);font-size:13px;margin-bottom:20px;line-height:1.6}.setup-box .field{margin-bottom:14px}
-.setup-step{color:var(--accent);font-weight:700;font-size:12px;margin-bottom:16px;text-transform:uppercase;letter-spacing:.06em}
 .loading-bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:9999;transition:width .3s;border-radius:0 2px 2px 0}
 @media(max-width:600px){.shop-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:1fr}.code-row{flex-direction:column;align-items:flex-start}.code-row-actions{width:100%}.code-row-actions .btn{flex:1;justify-content:center}.header{padding:12px 14px}.dashboard-body{padding:16px 12px}}
 </style>
@@ -105,18 +98,6 @@ textarea.input-field{resize:vertical;font-family:var(--mono);font-size:12px}
 
 <div id="loading-bar" class="loading-bar hidden" style="width:0%"></div>
 <div id="loading-screen" class="spinner-overlay"><div class="spinner"></div><div class="spinner-text">Conectando ao servidor...</div></div>
-
-<div id="setup-screen" class="hidden">
-  <div class="setup-box slide-up">
-    <div class="setup-step">Configuração inicial</div>
-    <h2>Cinema <span>GM7</span></h2>
-    <p>Cole a <strong>URL do seu servidor no Render</strong>.<br>Exemplo: <code style="color:var(--accent);font-size:12px">https://cinema-gm7.onrender.com</code></p>
-    <div class="field"><label class="label">URL do Servidor</label><input class="input-field" id="setup-url" placeholder="https://cinema-gm7.onrender.com"></div>
-    <div id="setup-error" class="login-error hidden"></div>
-    <button class="btn btn-primary btn-full" id="setup-btn" onclick="saveSetup()" style="margin-top:8px">Conectar</button>
-    <p style="margin-top:16px;font-size:11px;color:var(--text-dim);text-align:center">URL fica salva neste navegador.</p>
-  </div>
-</div>
 
 <div id="toast" class="hidden"></div>
 
@@ -151,7 +132,7 @@ textarea.input-field{resize:vertical;font-family:var(--mono);font-size:12px}
   <div class="header">
     <div class="header-brand"><div class="header-logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg></div><div><div class="header-title">Cinema <span>GM7</span></div><div class="header-sub">Painel Administrativo</div></div></div>
     <div style="display:flex;gap:8px;align-items:center">
-      <button class="btn btn-ghost btn-sm" onclick="refreshData()" title="Atualizar">↻</button>
+      <button class="btn btn-ghost btn-sm" onclick="refreshData()">↻</button>
       <button class="btn btn-ghost" onclick="doLogout()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</button>
     </div>
   </div>
@@ -162,7 +143,7 @@ textarea.input-field{resize:vertical;font-family:var(--mono);font-size:12px}
   <div class="header">
     <div class="header-brand"><div class="header-logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg></div><div><div class="header-title">Cinema <span>GM7</span></div><div class="header-sub" id="emp-greeting"></div></div></div>
     <div style="display:flex;gap:8px;align-items:center">
-      <button class="btn btn-ghost btn-sm" onclick="refreshData()" title="Atualizar">↻</button>
+      <button class="btn btn-ghost btn-sm" onclick="refreshData()">↻</button>
       <button class="btn btn-ghost" onclick="doLogout()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</button>
     </div>
   </div>
@@ -187,12 +168,11 @@ textarea.input-field{resize:vertical;font-family:var(--mono);font-size:12px}
   </div>
 </div>
 
-<div id="conn-status" class="conn-status hidden"></div>
-
 <script>
-const SVG={shop:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 2-4h16l2 4"/><path d="M2 7v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7"/><path d="M9 21V11h6v10"/></svg>',users:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',ticket:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/></svg>',check:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',copy:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',trash:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',plus:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',dot:'<svg width="8" height="8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>'};
+const SVG={shop:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 2-4h16l2 4"/><path d="M2 7v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7"/><path d="M9 21V11h6v10"/></svg>',users:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',ticket:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/></svg>',check:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',copy:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',trash:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',plus:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'};
 
-let API='';
+// API aponta pro mesmo servidor (sem necessidade de configurar URL)
+const API='/api';
 let S={loginTab:'employee',user:null,codes:{campinas:[],galleria:[]},claims:[],adminTab:'campinas',empShop:'campinas',emailCode:null};
 
 function showLoading(on){const b=document.getElementById('loading-bar');if(on){b.classList.remove('hidden');b.style.width='70%'}else{b.style.width='100%';setTimeout(()=>{b.classList.add('hidden');b.style.width='0%'},300)}}
@@ -201,47 +181,16 @@ async function get(path){showLoading(true);try{const r=await fetch(API+path);con
 async function post(path,body){showLoading(true);try{const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();showLoading(false);return d}catch(e){showLoading(false);return{success:false,error:e.message}}}
 async function del(path){showLoading(true);try{const r=await fetch(API+path,{method:'DELETE'});const d=await r.json();showLoading(false);return d}catch(e){showLoading(false);return{success:false,error:e.message}}}
 
-(function(){
-  const fs=document.getElementById('filmstrip');for(let i=0;i<20;i++){const d=document.createElement('div');fs.appendChild(d)}
+(async function(){
+  const fs=document.getElementById('filmstrip');for(let i=0;i<20;i++){fs.appendChild(document.createElement('div'))}
   document.querySelectorAll('#login-screen input').forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter')handleLogin()}));
   document.getElementById('modal-email-to').addEventListener('keydown',e=>{if(e.key==='Enter')sendEmail()});
-  document.getElementById('setup-url').addEventListener('keydown',e=>{if(e.key==='Enter')saveSetup()});
-  const saved=localStorage.getItem('gm7_api_url');
-  if(!saved){showScreen('setup-screen');return}
-  API=saved;testAndGo();
+  // Auto-connect (same server)
+  const r=await get('/ping');
+  if(r.success){showScreen('login-screen')}else{document.querySelector('.spinner-text').textContent='Erro ao conectar. Recarregue a página.'}
 })();
 
-async function testAndGo(){
-  const r=await get('/ping');
-  if(r.success){
-    document.getElementById('conn-status').className='conn-status conn-ok';
-    document.getElementById('conn-status').innerHTML=SVG.dot+' Servidor conectado';
-    document.getElementById('conn-status').classList.remove('hidden');
-    showScreen('login-screen');
-  }else{
-    showScreen('setup-screen');
-    document.getElementById('setup-url').value=localStorage.getItem('gm7_api_url')||'';
-    document.getElementById('setup-error').textContent='Servidor não respondeu. Verifique a URL.';
-    document.getElementById('setup-error').classList.remove('hidden');
-  }
-}
-
-async function saveSetup(){
-  const url=document.getElementById('setup-url').value.trim().replace(/\/$/,'');
-  const err=document.getElementById('setup-error');err.classList.add('hidden');
-  if(!url){err.textContent='Cole a URL do servidor.';err.classList.remove('hidden');return}
-  const btn=document.getElementById('setup-btn');btn.disabled=true;btn.textContent='Testando...';
-  API=url;const r=await get('/ping');
-  btn.disabled=false;btn.textContent='Conectar';
-  if(!r.success){err.textContent='Servidor não respondeu. Verifique se o deploy no Render está ativo.';err.classList.remove('hidden');return}
-  localStorage.setItem('gm7_api_url',url);
-  document.getElementById('conn-status').className='conn-status conn-ok';
-  document.getElementById('conn-status').innerHTML=SVG.dot+' Servidor conectado';
-  document.getElementById('conn-status').classList.remove('hidden');
-  showScreen('login-screen');toast('Conectado!');
-}
-
-function showScreen(id){['loading-screen','setup-screen','login-screen','admin-screen','employee-screen'].forEach(s=>document.getElementById(s).classList.add('hidden'));const e=document.getElementById(id);e.classList.remove('hidden');e.classList.add('fade-in')}
+function showScreen(id){['loading-screen','login-screen','admin-screen','employee-screen'].forEach(s=>document.getElementById(s).classList.add('hidden'));const e=document.getElementById(id);e.classList.remove('hidden');e.classList.add('fade-in')}
 
 let toastT;function toast(m,ok=true){const e=document.getElementById('toast');e.className=ok?'success':'error';e.innerHTML=SVG.check+' '+m;e.classList.remove('hidden');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.add('hidden'),2800)}
 
@@ -268,8 +217,7 @@ async function handleLogin(){
 function doLogout(){S.user=null;showScreen('login-screen');['login-name','login-email','login-username','login-password'].forEach(id=>document.getElementById(id).value='')}
 
 async function loadAll(){
-  const cr=await get('/codes');
-  S.codes={campinas:[],galleria:[]};
+  const cr=await get('/codes');S.codes={campinas:[],galleria:[]};
   if(cr.success&&cr.codes){cr.codes.forEach(c=>{const e={id:c._id,code:c.code,claimed:c.claimed,claimed_by:c.claimed_by,claimed_by_name:c.claimed_by_name,claimed_at:c.claimed_at};if(S.codes[c.shopping])S.codes[c.shopping].push(e)})}
   const clr=await get('/claims');
   S.claims=clr.success&&clr.claims?clr.claims.map(c=>({id:c._id,code:c.code,shopping:c.shopping,claimed_by:c.claimed_by,claimed_by_name:c.claimed_by_name,claimed_at:c.claimed_at})):[];
@@ -314,11 +262,9 @@ function sendEmail(){
 function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
 function renderAdmin(){
-  const ca=S.codes.campinas.filter(c=>!c.claimed).length,ct=S.codes.campinas.length;
-  const ga=S.codes.galleria.filter(c=>!c.claimed).length,gt=S.codes.galleria.length;
+  const ca=S.codes.campinas.filter(c=>!c.claimed).length,ct=S.codes.campinas.length,ga=S.codes.galleria.filter(c=>!c.claimed).length,gt=S.codes.galleria.length;
   document.getElementById('admin-stats').innerHTML=`<div class="stat-card"><div class="stat-label">Campinas <span>· disponíveis</span></div><div class="stat-value" style="color:var(--campinas)">${ca}<small> / ${ct}</small></div></div><div class="stat-card"><div class="stat-label">Galleria <span>· disponíveis</span></div><div class="stat-value" style="color:var(--galleria)">${ga}<small> / ${gt}</small></div></div><div class="stat-card"><div class="stat-label">Resgatados <span>· total</span></div><div class="stat-value" style="color:var(--accent)">${S.claims.length}</div></div>`;
-  const tabs=[{id:'campinas',label:'Shopping Campinas',icon:SVG.shop,cls:'active-campinas'},{id:'galleria',label:'Shopping Galleria',icon:SVG.shop,cls:'active-galleria'},{id:'history',label:'Histórico',icon:SVG.users,cls:'active-history'}];
-  document.getElementById('admin-tabs').innerHTML=tabs.map(t=>`<button class="nav-tab ${S.adminTab===t.id?t.cls:''}" onclick="S.adminTab='${t.id}';renderAdmin()">${t.icon} ${t.label}</button>`).join('');
+  document.getElementById('admin-tabs').innerHTML=[{id:'campinas',label:'Shopping Campinas',icon:SVG.shop,cls:'active-campinas'},{id:'galleria',label:'Shopping Galleria',icon:SVG.shop,cls:'active-galleria'},{id:'history',label:'Histórico',icon:SVG.users,cls:'active-history'}].map(t=>`<button class="nav-tab ${S.adminTab===t.id?t.cls:''}" onclick="S.adminTab='${t.id}';renderAdmin()">${t.icon} ${t.label}</button>`).join('');
   const content=document.getElementById('admin-content');
   if(S.adminTab!=='history'){
     const codes=S.codes[S.adminTab]||[];let rows='';
